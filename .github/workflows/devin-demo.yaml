@@ -34,8 +34,10 @@ jobs:
       id: run-tests
       continue-on-error: true
       run: |
+        set +e
         poetry run pytest -x --junitxml=test-results.xml -m offline 2>&1 | tee test-output.txt
         echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+        set -e
 
     - name: parse failures and trigger devin
       if: steps.run-tests.outputs.exit_code != '0'
@@ -43,7 +45,7 @@ jobs:
         DEVIN_API_TOKEN: ${{ secrets.DEVIN_API_TOKEN }}
       run: |
         # Parse JUnit XML for failed tests and trigger a Devin session for each
-        python3 << 'EOF'
+        poetry run python3 << 'EOF'
         import xml.etree.ElementTree as ET
         import requests
         import os
