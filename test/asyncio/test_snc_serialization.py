@@ -1,4 +1,5 @@
 # tests/asyncio/test_snc_serialization.py
+import pytest
 from unittest import IsolatedAsyncioTestCase
 from types import SimpleNamespace
 
@@ -140,6 +141,7 @@ class TestAsyncSerialization(IsolatedAsyncioTestCase):
 
     # -------- no-network serialization tests (same as sync) --------
 
+    @pytest.mark.offline
     async def test_serialize(self):
         gr = GlideRecord(None, 'some_table')
         gr.initialize()
@@ -150,6 +152,7 @@ class TestAsyncSerialization(IsolatedAsyncioTestCase):
         self.assertIsNotNone(data)
         self.assertEqual(data, {'intfield': 5, 'strfield': 'my string'})
 
+    @pytest.mark.offline
     async def test_serialize_display(self):
         gr = GlideRecord(None, 'some_table')
         gr.initialize()
@@ -163,12 +166,13 @@ class TestAsyncSerialization(IsolatedAsyncioTestCase):
         self.assertEqual(gr.serialize(), {'intfield': 5, 'strfield': 'my string'})
         self.assertEqual(data, {'intfield': 5, 'strfield': 'my string display value'})
 
+    @pytest.mark.offline
     async def test_serialize_reference_link(self):
         gr = GlideRecord(None, 'some_table')
         gr.initialize()
         gr.reffield = 'my reference'
         gr.set_link('reffield', 'https://dev00000.service-now.com/api/now/table/sys___/abcde12345')
-        gr._client = SimpleNamespace(instance=self.c.server)
+        gr._client = SimpleNamespace(instance='https://dev00000.service-now.com')
 
         data = gr.serialize(exclude_reference_link=False)
         self.assertIsNotNone(data)
@@ -187,6 +191,7 @@ class TestAsyncSerialization(IsolatedAsyncioTestCase):
         gr.reffield.set_link('https://dev00000.service-now.com/api/now/table/sys___/xyz789')
         self.assertEqual(gr.reffield.get_link(), 'https://dev00000.service-now.com/api/now/table/sys___/xyz789')
 
+    @pytest.mark.offline
     async def test_serialize_reference_link_all(self):
         gr = GlideRecord(None, 'some_table')
         gr.initialize()
@@ -212,6 +217,7 @@ class TestAsyncSerialization(IsolatedAsyncioTestCase):
             {'reffield': {'value': 'my reference', 'display_value': 'my reference display', 'link': 'https://dev00000.service-now.com/api/now/table/sys___/abcde12345'}}
         )
 
+    @pytest.mark.offline
     async def test_str(self):
         gr = GlideRecord(None, 'some_table')
         gr.initialize()

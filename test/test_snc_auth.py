@@ -1,3 +1,4 @@
+import pytest
 from unittest import TestCase, skip
 
 from pysnc import ServiceNowClient
@@ -103,6 +104,7 @@ class TestAuth(TestCase):
         # Check that error message is informative
         self.assertIn('access token', str(context.exception).lower())
 
+    @pytest.mark.offline
     def test_auth_param_check(self):
         self.assertRaisesRegex(exceptions.AuthenticationException, r'Cannot specify both.+', lambda: ServiceNowClient('anyinstance', auth='asdf', cert='asdf'))
         self.assertRaisesRegex(exceptions.AuthenticationException, r'No valid auth.+', lambda: ServiceNowClient('anyinstance', auth='zzz'))

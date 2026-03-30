@@ -1,8 +1,10 @@
+import pytest
 from unittest import TestCase
 from pysnc.record import GlideElement, GlideRecord
 import datetime, json, re
 
 
+@pytest.mark.offline
 class TestElement(TestCase):
 
 
