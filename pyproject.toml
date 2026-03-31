@@ -47,6 +47,9 @@ cyclonedx-bom = "^7.2.1"
 [tool.poetry.group.docs.dependencies]
 sphinx = "*"
 
+[tool.pytest.ini_options]
+markers = ["offline: tests that run without a ServiceNow server"]
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

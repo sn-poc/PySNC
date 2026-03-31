@@ -1,0 +1,111 @@
+name: Devin Demo - Auto-fix Failed Tests
+
+on:
+  pull_request:
+  push:
+    branches: ["main", "devin/**"]
+
+jobs:
+  test-and-fix:
+    runs-on: ubuntu-latest
+    steps:
+    - name: check out repository
+      uses: actions/checkout@v5
+
+    - name: set up python 3.11
+      uses: actions/setup-python@v6
+      with:
+        python-version: "3.11"
+
+    - name: setup poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: 2.1.3
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
+    - name: install dependencies
+      run: poetry install --no-interaction --no-root --with dev --extras "asyncio"
+
+    - name: install project
+      run: poetry install --no-interaction --with dev --extras "asyncio"
+
+    - name: run offline tests
+      id: run-tests
+      continue-on-error: true
+      run: |
+        set +e
+        poetry run pytest -x --junitxml=test-results.xml -m offline 2>&1 | tee test-output.txt
+        echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+        set -e
+
+    - name: parse failures and trigger devin
+      if: steps.run-tests.outputs.exit_code != '0'
+      env:
+        DEVIN_API_TOKEN: ${{ secrets.DEVIN_API_TOKEN }}
+      run: |
+        # Parse JUnit XML for failed tests and trigger a Devin session for each
+        poetry run python3 << 'EOF'
+        import xml.etree.ElementTree as ET
+        import requests
+        import os
+        import json
+
+        tree = ET.parse('test-results.xml')
+        root = tree.getroot()
+
+        failures = []
+        for testcase in root.iter('testcase'):
+            failure = testcase.find('failure')
+            error = testcase.find('error')
+            if failure is not None or error is not None:
+                classname = testcase.get('classname', '')
+                name = testcase.get('name', '')
+                message = (failure if failure is not None else error).get('message', '')
+                text = (failure if failure is not None else error).text or ''
+                failures.append({
+                    'test': f"{classname}::{name}",
+                    'message': message,
+                    'traceback': text[:2000]
+                })
+
+        if not failures:
+            print("No failures found in XML")
+            exit(0)
+
+        token = os.environ.get('DEVIN_API_TOKEN')
+        if not token:
+            print("No DEVIN_API_TOKEN set, printing failures only:")
+            for f in failures:
+                print(f"  FAILED: {f['test']}: {f['message']}")
+            exit(1)
+
+        repo = os.environ.get('GITHUB_REPOSITORY', 'sn-poc/PySNC')
+        ref = os.environ.get('GITHUB_HEAD_REF') or os.environ.get('GITHUB_REF_NAME', 'main')
+
+        for f in failures:
+            prompt = (
+                f"The test `{f['test']}` is failing in the repo {repo} on branch {ref}.\n\n"
+                f"Error: {f['message']}\n\n"
+                f"Traceback:\n```\n{f['traceback']}\n```\n\n"
+                f"Please investigate the test and the source code, fix the issue, "
+                f"and push the fix to the branch `{ref}`. "
+                f"Run the test locally to verify it passes before pushing."
+            )
+            print(f"Creating Devin session for: {f['test']}")
+            resp = requests.post(
+                'https://api.devin.ai/v1/sessions',
+                headers={
+                    'Authorization': f'Bearer {token}',
+                    'Content-Type': 'application/json'
+                },
+                json={
+                    'prompt': prompt,
+                }
+            )
+            if resp.ok:
+                session = resp.json()
+                print(f"  -> Session created: {session.get('url', session.get('session_id', 'unknown'))}")
+            else:
+                print(f"  -> Failed to create session: {resp.status_code} {resp.text}")
+        EOF
