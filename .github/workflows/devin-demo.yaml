@@ -1,6 +1,7 @@
 name: Devin Demo - Auto-fix Failed Tests
 
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches: ["main", "devin/**"]
@@ -35,7 +36,7 @@ jobs:
       continue-on-error: true
       run: |
         set +e
-        poetry run pytest -x --junitxml=test-results.xml -m offline 2>&1 | tee test-output.txt
+        poetry run pytest --junitxml=test-results.xml -m offline 2>&1 | tee test-output.txt
         echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
         set -e
 
