@@ -44,6 +44,7 @@ jobs:
       if: steps.run-tests.outputs.exit_code != '0'
       env:
         DEVIN_API_TOKEN: ${{ secrets.DEVIN_API_TOKEN }}
+        DEVIN_ORG_ID: ${{ secrets.DEVIN_ORG_ID }}
       run: |
         # Parse JUnit XML for failed tests and trigger a Devin session for each
         poetry run python3 << 'EOF'
@@ -75,8 +76,9 @@ jobs:
             exit(0)
 
         token = os.environ.get('DEVIN_API_TOKEN')
-        if not token:
-            print("No DEVIN_API_TOKEN set, printing failures only:")
+        org_id = os.environ.get('DEVIN_ORG_ID')
+        if not token or not org_id:
+            print("DEVIN_API_TOKEN or DEVIN_ORG_ID not set, printing failures only:")
             for f in failures:
                 print(f"  FAILED: {f['test']}: {f['message']}")
             exit(1)
@@ -95,7 +97,7 @@ jobs:
             )
             print(f"Creating Devin session for: {f['test']}")
             resp = requests.post(
-                'https://api.devin.ai/v1/sessions',
+                f'https://api.devin.ai/v3/organizations/{org_id}/sessions',
                 headers={
                     'Authorization': f'Bearer {token}',
                     'Content-Type': 'application/json'
