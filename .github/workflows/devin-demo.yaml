@@ -1,6 +1,7 @@
 name: Devin Demo - Auto-fix Failed Tests
 
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches: ["main", "devin/**"]
