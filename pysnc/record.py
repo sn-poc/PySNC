@@ -83,9 +83,7 @@ class GlideElement(str):
         if self._value != value:
             self._changed = True
             self._value = value
-            # only clear display if display was explicitly set to the old value
-            if self._display_value == self._value:
-                self._display_value = None
+            self._display_value = None
 
     def set_display_value(self, value: Any):
         """
