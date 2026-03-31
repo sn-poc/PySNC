@@ -83,7 +83,9 @@ class GlideElement(str):
         if self._value != value:
             self._changed = True
             self._value = value
-            self._display_value = None
+            # only clear display if display was explicitly set to the old value
+            if self._display_value == self._value:
+                self._display_value = None
 
     def set_display_value(self, value: Any):
         """
@@ -173,7 +175,9 @@ class GlideElement(str):
     def __bool__(self):
         # help with the truthiness of true/false fields
         # theoretically could have a false case if we're a string with the value false since we dont know our types
-        return True
+        if self.get_value() == 'false':
+            return False
+        return bool(self.get_value())
 
     def __magic(self, attr, arg=None):
         #print(f"__magic(self, {attr}, {arg}")
