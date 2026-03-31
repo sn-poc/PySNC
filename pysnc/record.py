@@ -160,7 +160,7 @@ class GlideElement(str):
         When called, setDateNumericValue() automatically creates the necessary GlideDateTime/GlideDate/GlideDuration object, and then sets the element to the specified value.
         """
         dt = datetime.fromtimestamp(ms/1000.0, tz=timezone.utc)
-        self.set_value(dt.strftime(TIMESTAMP_FORMAT)[:-5])  # note: strips UTC (+0000) from the end
+        self.set_value(dt.strftime(TIMESTAMP_FORMAT)[:-5])  # note: strips UTC offset (+0000) from the end
 
     def __str__(self):
         #if self._display_value and self._value != self._display_value:
