@@ -173,7 +173,7 @@ class GlideElement(str):
     def __bool__(self):
         # help with the truthiness of true/false fields
         # theoretically could have a false case if we're a string with the value false since we dont know our types
-        if self.get_value() == 'False':
+        if isinstance(self.get_value(), str) and self.get_value().lower() == 'false':
             return False
         return bool(self.get_value())
 
